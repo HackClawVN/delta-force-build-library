@@ -1,141 +1,68 @@
-
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="vi"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HackClawVN - Delta Force Build Library</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#0b0e12;color:#eee;font-family:Arial,sans-serif}
-header{padding:18px;background:#151b22;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:20px;font-weight:bold;color:#d6a64b}
-button{border:0;border-radius:7px;padding:11px 15px;cursor:pointer;font-weight:bold}
-.gold{background:#d6a64b;color:#111}
-.dark{background:#28313a;color:white}
-main{max-width:1050px;margin:auto;padding:22px}
-.hero{padding:35px 20px;background:linear-gradient(120deg,#29333b,#11171d);border-radius:12px}
-h1{font-size:32px;margin:8px 0;color:#d6a64b}
-p{color:#aab4bd}
+*{box-sizing:border-box}body{margin:0;background:#0b0e12;color:#eee;font-family:Arial,sans-serif}
+header{padding:16px;background:#151b22;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.logo,h1,.card h3{color:#d6a64b;font-weight:bold}main{max-width:1050px;margin:auto;padding:18px}
+.hero,.panel,.card{background:#171e25;border:1px solid #303b45;border-radius:10px;padding:16px;margin:14px 0}
+button{border:0;border-radius:7px;padding:11px 15px;margin:4px;cursor:pointer;font-weight:bold}
+.gold{background:#d6a64b;color:#111}.dark{background:#28313a;color:white}
 input,select,textarea{background:#171e25;color:white;border:1px solid #39434d;padding:12px;border-radius:7px;width:100%;margin:5px 0}
-.toolbar{display:flex;gap:8px;margin:20px 0}
-.toolbar input{flex:1}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
-.card{background:#171e25;border:1px solid #303b45;border-radius:10px;padding:15px}
-.card h3{color:#d6a64b}
-.code{background:#090d11;padding:12px;overflow-wrap:anywhere;border:1px dashed #555;border-radius:6px}
-.actions{display:flex;gap:8px;margin-top:12px}
-.actions button{flex:1}
-footer{text-align:center;padding:25px;color:#777}
-#form{display:none;background:#171e25;padding:18px;border-radius:10px;margin:20px 0}
-</style>
-</head>
-<body>
-<header>
- <div class="logo">HACKCLAWVN</div>
- <button class="dark" onclick="language()" id="lang">🇬🇧 English</button>
-</header>
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.toolbar{display:flex;gap:8px}.toolbar input{flex:1}.code{background:#090d11;padding:12px;overflow-wrap:anywhere}
+.card img{width:100%;max-height:220px;object-fit:cover;border-radius:7px}.small,p{color:#aab4bd;line-height:1.5}
+.actions{display:flex;gap:8px}.actions button{flex:1}#form,#authbox{display:none}
+footer{text-align:center;padding:24px;color:#777}
+@media(max-width:560px){.toolbar{display:block}.actions{flex-direction:column}}
+</style></head><body>
+<header><div class="logo">HACKCLAWVN</div><div><span id="userlabel" class="small">Chưa đăng nhập</span>
+<button class="dark" id="authbutton" onclick="toggleAuth()">Đăng nhập</button>
+<button class="dark" id="logoutbutton" onclick="logout()" style="display:none">Đăng xuất</button>
+<button class="dark" onclick="language()" id="lang">🇬🇧 English</button></div></header>
 <main>
-<section class="hero">
- <div id="subtitle">DELTA FORCE COMMUNITY</div>
- <h1 id="title">THƯ VIỆN BUILD SÚNG</h1>
- <p id="intro">Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.</p>
- <button class="gold" onclick="showForm()" id="post">+ ĐĂNG BUILD</button>
-</section>
-
-<section id="form">
- <h2 id="formtitle">Đóng góp Build mới</h2>
- <input id="gun" placeholder="Tên súng">
- <select id="mode">
-  <option>Chiến Dịch</option>
-  <option>Chiến Trường</option>
- </select>
- <input id="buildcode" placeholder="Mã Build súng">
- <input id="image" type="file" accept="image/*">
- <textarea id="desc" placeholder="Mô tả và phụ kiện"></textarea>
- <button class="gold" onclick="addBuild()" id="submit">Đăng bài</button>
- <button class="dark" onclick="hideForm()">Đóng</button>
-</section>
-
-<h2 id="library">BUILD MỚI NHẤT</h2>
-<div class="toolbar">
- <input id="search" placeholder="Tìm kiếm súng..." oninput="render()">
- <select id="filter" onchange="render()">
-  <option value="">Tất cả chế độ</option>
-  <option>Chiến Dịch</option>
-  <option>Chiến Trường</option>
- </select>
-</div>
-<div class="grid" id="builds"></div>
-</main>
+<section class="hero"><div>DELTA FORCE COMMUNITY</div><h1 id="title">THƯ VIỆN BUILD SÚNG</h1>
+<p id="intro">Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.</p>
+<button class="gold" onclick="showForm()" id="postbutton">+ ĐĂNG BUILD</button></section>
+<section id="authbox" class="panel"><h2>Đăng nhập / Đăng ký</h2>
+<input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mật khẩu, ít nhất 6 ký tự">
+<button class="gold" onclick="signIn()">Đăng nhập</button><button class="dark" onclick="signUp()">Tạo tài khoản</button>
+<p id="authmessage" class="small">Nếu được yêu cầu xác nhận, hãy mở email để xác nhận tài khoản.</p><button class="dark" onclick="toggleAuth()">Đóng</button></section>
+<section id="form" class="panel"><h2>Đóng góp Build mới</h2>
+<input id="gun" placeholder="Tên súng"><select id="mode"><option>Chiến Dịch</option><option>Chiến Trường</option></select>
+<input id="buildcode" placeholder="Mã Build súng"><label class="small">Ảnh JPG/PNG/WEBP, tối đa 5 MB</label>
+<input id="image" type="file" accept="image/jpeg,image/png,image/webp"><textarea id="desc" placeholder="Mô tả và phụ kiện"></textarea>
+<button class="gold" id="submitbutton" onclick="addBuild()">Gửi Build để duyệt</button><button class="dark" onclick="hideForm()">Đóng</button>
+<p class="small">Build mới sẽ chờ duyệt trước khi xuất hiện công khai.</p></section>
+<h2 id="library">BUILD MỚI NHẤT</h2><div class="toolbar"><input id="search" placeholder="Tìm kiếm súng..." oninput="render()">
+<select id="filter" onchange="render()"><option value="">Tất cả chế độ</option><option>Chiến Dịch</option><option>Chiến Trường</option></select></div>
+<div id="notice" class="small">Đang kết nối thư viện...</div><div class="grid" id="builds"></div></main>
 <footer>HACKCLAWVN © 2026 | DELTA FORCE BUILD COMMUNITY</footer>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-let english=false;
-let data=JSON.parse(localStorage.getItem("dfbuilds")||"null")||[
-{gun:"AKM",mode:"Chiến Trường",code:"AKM-DEMO-001",desc:"Build mẫu cân bằng, phù hợp giao tranh tầm trung.",likes:12},
-{gun:"M4A1",mode:"Chiến Dịch",code:"M4A1-DEMO-002",desc:"Build mẫu ổn định và dễ sử dụng.",likes:8},
-{gun:"MP5",mode:"Chiến Trường",code:"MP5-DEMO-003",desc:"Build mẫu cơ động, dành cho cự ly gần.",likes:5}
-];
-function language(){
- english=!english;
- document.documentElement.lang=english?"en":"vi";
- document.getElementById("lang").innerText=english?"🇻🇳 Tiếng Việt":"🇬🇧 English";
- document.getElementById("subtitle").innerText=english?"DELTA FORCE COMMUNITY":"DELTA FORCE COMMUNITY";
- document.getElementById("title").innerText=english?"WEAPON BUILD LIBRARY":"THƯ VIỆN BUILD SÚNG";
- document.getElementById("intro").innerText=english?"Discover and share the best weapon builds from the Delta Force community.":"Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.";
- document.getElementById("post").innerText=english?"+ SUBMIT BUILD":"+ ĐĂNG BUILD";
- document.getElementById("formtitle").innerText=english?"Submit a new build":"Đóng góp Build mới";
- document.getElementById("submit").innerText=english?"Submit":"Đăng bài";
- document.getElementById("library").innerText=english?"LATEST BUILDS":"BUILD MỚI NHẤT";
- render();
-}
-function showForm(){document.getElementById("form").style.display="block"}
-function hideForm(){document.getElementById("form").style.display="none"}
-function addBuild(){
- let gun=document.getElementById("gun").value.trim();
- let code=document.getElementById("buildcode").value.trim();
- let desc=document.getElementById("desc").value.trim();
- if(!gun||!code){alert("Vui lòng nhập tên súng và mã Build");return}
- let file=document.getElementById("image").files[0];
- if(file){
-  let reader=new FileReader();
-  reader.onload=()=>saveBuild(gun,code,desc,reader.result);
-  reader.readAsDataURL(file);
- }else saveBuild(gun,code,desc,"");
-}
-function saveBuild(gun,code,desc,photo){
- data.unshift({gun,code,desc,photo,mode:document.getElementById("mode").value,likes:0});
- localStorage.setItem("dfbuilds",JSON.stringify(data));
- ["gun","buildcode","desc","image"].forEach(id=>document.getElementById(id).value="");
- hideForm();render();alert("Đã thêm Build!");
-}
-function like(i){data[i].likes++;localStorage.setItem("dfbuilds",JSON.stringify(data));render()}
-function copyCode(code){
- if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>alert("Đã sao chép!")).catch(()=>prompt("Sao chép mã:",code));
- else prompt("Sao chép mã:",code);
-}
-function render(){
- let q=document.getElementById("search").value.toLowerCase();
- let f=document.getElementById("filter").value;
- let list=data.map((b,i)=>({...b,index:i})).filter(b=>
- (!f||b.mode===f)&&
- (b.gun+b.code+b.desc).toLowerCase().includes(q));
- document.getElementById("builds").innerHTML=list.map(b=>`
- <article class="card">
- ${b.photo?`<img src="${b.photo}" style="width:100%;border-radius:7px">`:""}
- <h3>${escapeHTML(b.gun)}</h3>
- <p>${escapeHTML(b.mode)}</p>
- <p>${escapeHTML(b.desc||"")}</p>
- <div class="code">${escapeHTML(b.code)}</div>
- <div class="actions">
- <button class="gold" onclick="copyCode(${JSON.stringify(b.code)})">${english?"Copy code":"Sao chép mã"}</button>
- <button class="dark" onclick="like(${b.index})">♥ ${b.likes}</button>
- </div></article>`).join("")||"<p>Không tìm thấy Build.</p>";
-}
-function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-render();
-</script>
-</body>
-  </html>
-  
+// Chỉ thay hai giá trị dưới đây bằng Project URL và Publishable key. Không dùng Secret key.
+const SUPABASE_URL="sb_publishable_FoHvAZD4EGoBhXayAHm7iQ_W2U48Qjn";
+const SUPABASE_PUBLISHABLE_KEY="https://wpsjvaliswsogfuosffn.supabase.co/rest/v1/";
+const ready=SUPABASE_URL.startsWith("https://")&&SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_")&&window.supabase;
+const db=ready?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
+let user=null,builds=[],english=false;
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function msg(s,bad=false){$("notice").textContent=s;$("notice").style.color=bad?"#ff8585":"#aab4bd";}
+function toggleAuth(){$("authbox").style.display=$("authbox").style.display==="block"?"none":"block";}
+function showForm(){if(!db){alert("Chưa cấu hình Supabase.");return}if(!user){toggleAuth();$("authmessage").textContent="Bạn cần đăng nhập để đăng Build.";return}$("form").style.display="block";}
+function hideForm(){$("form").style.display="none";}
+function authUI(){$("userlabel").textContent=user?user.email:"Chưa đăng nhập";$("authbutton").style.display=user?"none":"inline-block";$("logoutbutton").style.display=user?"inline-block":"none";if(user)$("authbox").style.display="none";}
+async function signUp(){if(!db)return alert("Chưa cấu hình Supabase.");let email=$("email").value.trim(),password=$("password").value;if(!email||password.length<6)return alert("Nhập email hợp lệ và mật khẩu ít nhất 6 ký tự.");let {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin}});$("authmessage").textContent=error?error.message:"Đăng ký thành công. Kiểm tra email để xác nhận nếu được yêu cầu.";}
+async function signIn(){if(!db)return alert("Chưa cấu hình Supabase.");let {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});$("authmessage").textContent=error?error.message:"Đăng nhập thành công.";}
+async function logout(){if(db)await db.auth.signOut();}
+async function loadBuilds(){if(!db){msg("Chưa cấu hình Supabase. Hãy điền Project URL và Publishable key.",true);return;}msg("Đang tải Build...");let {data,error}=await db.from("builds").select("*").order("created_at",{ascending:false}).limit(100);if(error){msg("Lỗi tải Build: "+error.message,true);return;}builds=data||[];await render();msg(builds.length+" Build đã tải.");}
+async function addBuild(){if(!user)return alert("Bạn cần đăng nhập trước.");let weapon=$("gun").value.trim(),code=$("buildcode").value.trim(),description=$("desc").value.trim(),mode=$("mode").value,file=$("image").files[0];if(!weapon||!code)return alert("Nhập tên súng và mã Build.");if(file&&(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024))return alert("Ảnh phải JPG, PNG hoặc WEBP và không quá 5 MB.");let btn=$("submitbutton");btn.disabled=true;try{let image_url=null;if(file){let ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg",path=user.id+"/"+crypto.randomUUID()+"."+ext;let {error}=await db.storage.from("build-images").upload(path,file,{contentType:file.type});if(error)throw error;image_url=db.storage.from("build-images").getPublicUrl(path).data.publicUrl;}let {error}=await db.from("builds").insert({user_id:user.id,weapon,mode,title:weapon+" - "+mode,code,description,image_url,accessories:[],status:"pending"});if(error)throw error;alert("Đã gửi Build! Bài đang chờ duyệt.");["gun","buildcode","desc","image"].forEach(id=>$(id).value="");hideForm();await loadBuilds();}catch(e){alert("Không gửi được: "+e.message);}finally{btn.disabled=false;}}
+async function likeBuild(id){if(!user){alert("Đăng nhập để yêu thích Build.");toggleAuth();return;}let {data:old,error:e}=await db.from("likes").select("id").eq("build_id",id).eq("user_id",user.id).maybeSingle();if(e)return alert(e.message);let result=old?await db.from("likes").delete().eq("id",old.id):await db.from("likes").insert({build_id:id,user_id:user.id});if(result.error)alert(result.error.message);await render();}
+async function commentBuild(id){if(!user){alert("Đăng nhập để bình luận.");toggleAuth();return;}let input=$("comment-"+id),content=input.value.trim();if(!content)return;let {error}=await db.from("comments").insert({build_id:id,user_id:user.id,content});if(error)return alert(error.message);input.value="";await render();}
+async function render(){if(!db)return;let q=$("search").value.toLowerCase(),f=$("filter").value,list=builds.filter(b=>(!f||b.mode===f)&&((b.weapon||"")+(b.code||"")+(b.description||"")).toLowerCase().includes(q));if(!list.length){$("builds").innerHTML="<p>Chưa có Build phù hợp. Hãy quay lại sau nhé!</p>";return;}let cards=await Promise.all(list.map(async b=>{let [{data:likes},{data:comments}]=await Promise.all([db.from("likes").select("id,user_id").eq("build_id",b.id),db.from("comments").select("id,content").eq("build_id",b.id).order("created_at").limit(10)]);let liked=!!(user&&(likes||[]).some(x=>x.user_id===user.id));return `<article class="card">${b.image_url?`<img src="${esc(b.image_url)}" alt="Ảnh build" loading="lazy">`:""}<h3>${esc(b.weapon)}</h3><p>${esc(b.mode)}</p><p>${esc(b.description||"")}</p><div class="code">${esc(b.code)}</div><div class="actions"><button class="gold" onclick="copyCode('${String(b.code||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'")}')">Sao chép mã</button><button class="dark" onclick="likeBuild('${b.id}')">${liked?"♥":"♡"} ${(likes||[]).length}</button></div><div><strong>Bình luận</strong>${(comments||[]).map(c=>`<p class="small">${esc(c.content)}</p>`).join("")||'<p class="small">Chưa có bình luận.</p>'}<input id="comment-${b.id}" maxlength="500" placeholder="Viết bình luận..."><button class="dark" onclick="commentBuild('${b.id}')">Gửi</button></div></article>`;}));$("builds").innerHTML=cards.join("");}
+function copyCode(code){if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>alert("Đã sao chép mã!")).catch(()=>prompt("Sao chép mã:",code));else prompt("Sao chép mã:",code);}
+function language(){english=!english;document.documentElement.lang=english?"en":"vi";$("lang").textContent=english?"🇻🇳 Tiếng Việt":"🇬🇧 English";$("title").textContent=english?"WEAPON BUILD LIBRARY":"THƯ VIỆN BUILD SÚNG";$("intro").textContent=english?"Discover and share the best weapon builds from the Delta Force community.":"Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.";$("postbutton").textContent=english?"+ SUBMIT BUILD":"+ ĐĂNG BUILD";$("library").textContent=english?"LATEST BUILDS":"BUILD MỚI NHẤT";$("search").placeholder=english?"Search weapons...":"Tìm kiếm súng...";}
+if(db){db.auth.getSession().then(({data})=>{user=data.session?.user||null;authUI();loadBuilds();});db.auth.onAuthStateChange((_event,session)=>{user=session?.user||null;authUI();loadBuilds();});}else{authUI();msg("Chưa cấu hình Supabase. Hãy điền hai thông tin kết nối trong mã nguồn.",true);}
+</script></body></html>
