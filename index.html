@@ -13,12 +13,13 @@ input,select,textarea{background:#171e25;color:white;border:1px solid #39434d;pa
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
 .toolbar{display:flex;gap:8px}.toolbar input{flex:1}.code{background:#090d11;padding:12px;overflow-wrap:anywhere}
 .card img{width:100%;max-height:220px;object-fit:cover;border-radius:7px}.small,p{color:#aab4bd;line-height:1.5}
-.actions{display:flex;gap:8px}.actions button{flex:1}#form,#authbox,#adminpanel{display:none}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.pending-tag{color:#f0c36a;font-weight:bold}.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;padding:18px;overflow:auto}.detail-modal{max-width:760px;margin:30px auto;background:#171e25;border:1px solid #46515c;border-radius:12px;padding:18px;position:relative}.detail-modal img{width:100%;max-height:420px;object-fit:contain;background:#090d11;border-radius:8px}.detail-code{font-size:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;background:#090d11;padding:14px;border-radius:8px}.detail-close{float:right}.detail-meta{color:#d6a64b;font-weight:bold}
+.actions{display:flex;gap:8px}.actions button{flex:1}#form,#authbox,#adminpanel,#profilepanel{display:none}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.pending-tag{color:#f0c36a;font-weight:bold}.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;padding:18px;overflow:auto}.detail-modal{max-width:760px;margin:30px auto;background:#171e25;border:1px solid #46515c;border-radius:12px;padding:18px;position:relative}.detail-modal img{width:100%;max-height:420px;object-fit:contain;background:#090d11;border-radius:8px}.detail-code{font-size:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;background:#090d11;padding:14px;border-radius:8px}.detail-close{float:right}.detail-meta{color:#d6a64b;font-weight:bold}.profile-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.avatar-circle{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d6a64b;color:#111;font-size:22px;font-weight:bold}.profile-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.stat-box{background:#0b0e12;border:1px solid #303b45;border-radius:8px;padding:12px}.stat-box strong{display:block;font-size:22px;color:#d6a64b}
 footer{text-align:center;padding:24px;color:#777}
 @media(max-width:560px){.toolbar{display:block}.actions{flex-direction:column}}
 </style></head><body>
 <header><div class="logo">HACKCLAWVN</div><div><span id="userlabel" class="small">Chưa đăng nhập</span>
 <button class="dark" id="authbutton" onclick="toggleAuth()">Đăng nhập</button>
+<button class="dark" id="profilebutton" onclick="toggleProfile()" style="display:none">Hồ sơ của tôi</button>
 <button class="dark" id="adminbutton" onclick="toggleAdmin()" style="display:none">Quản trị</button>
 <button class="dark" id="logoutbutton" onclick="logout()" style="display:none">Đăng xuất</button>
 <button class="dark" onclick="language()" id="lang">🇬🇧 English</button></div></header>
@@ -36,6 +37,7 @@ footer{text-align:center;padding:24px;color:#777}
 <input id="image" type="file" accept="image/jpeg,image/png,image/webp"><textarea id="desc" placeholder="Mô tả và phụ kiện"></textarea>
 <button class="gold" id="submitbutton" onclick="addBuild()">Gửi Build để duyệt</button><button class="dark" onclick="hideForm()">Đóng</button>
 <p class="small">Build mới sẽ chờ duyệt trước khi xuất hiện công khai.</p></section>
+<section id="profilepanel" class="panel"><h2>HỒ SƠ CỦA TÔI</h2><div id="profilecontent"></div><button class="dark" onclick="toggleProfile()">Đóng hồ sơ</button></section>
 <section id="adminpanel" class="panel"><h2>QUẢN TRỊ BUILD</h2><p class="small">Chỉ tài khoản Admin được phép duyệt hoặc từ chối Build.</p><div id="pendingbuilds"></div><button class="dark" onclick="toggleAdmin()">Đóng quản trị</button></section>
 <h2 id="library">BUILD MỚI NHẤT</h2><div class="toolbar"><input id="search" placeholder="Tìm kiếm súng..." oninput="render()">
 <select id="filter" onchange="render()"><option value="">Tất cả chế độ</option><option>Chiến Dịch</option><option>Chiến Trường</option></select></div>
@@ -58,7 +60,17 @@ function msg(s,bad=false){$("notice").textContent=s;$("notice").style.color=bad?
 function toggleAuth(){$("authbox").style.display=$("authbox").style.display==="block"?"none":"block";}
 function showForm(){if(!db){alert("Chưa cấu hình Supabase.");return}if(!user){toggleAuth();$("authmessage").textContent="Bạn cần đăng nhập để đăng Build.";return}$("form").style.display="block";}
 function hideForm(){$("form").style.display="none";}
-function authUI(){$("userlabel").textContent=user?user.email:"Chưa đăng nhập";$("authbutton").style.display=user?"none":"inline-block";$("logoutbutton").style.display=user?"inline-block":"none";$("adminbutton").style.display=isAdmin?"inline-block":"none";if(user)$("authbox").style.display="none";}
+function authUI(){$("userlabel").textContent=user?user.email:"Chưa đăng nhập";$("authbutton").style.display=user?"none":"inline-block";$("logoutbutton").style.display=user?"inline-block":"none";$("adminbutton").style.display=isAdmin?"inline-block":"none";$("profilebutton").style.display=user?"inline-block":"none";if(user)$("authbox").style.display="none";}
+function toggleProfile(){if(!user)return alert("Bạn cần đăng nhập.");$("profilepanel").style.display=$("profilepanel").style.display==="block"?"none":"block";if($("profilepanel").style.display==="block")renderProfile();}
+async function renderProfile(){
+ if(!user)return;
+ let {data,error}=await db.from("builds").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
+ if(error){$("profilecontent").innerHTML="<p class='small'>Không tải được hồ sơ: "+esc(error.message)+"</p>";return;}
+ let own=data||[],approved=own.filter(b=>b.status==="approved").length,pending=own.filter(b=>b.status==="pending").length,rejected=own.filter(b=>b.status==="rejected").length;
+ let initial=(user.email||"U").trim().charAt(0).toUpperCase();
+ let joined=user.created_at?new Date(user.created_at).toLocaleDateString("vi-VN"):"Không có dữ liệu";
+ $("profilecontent").innerHTML="<div class='profile-head'><div class='avatar-circle'>"+esc(initial)+"</div><div><h3>"+esc(user.email||"Thành viên")+"</h3><p class='small'>Tham gia: "+esc(joined)+"</p></div></div><div class='profile-stats'><div class='stat-box'><strong>"+own.length+"</strong><span class='small'>Tổng Build</span></div><div class='stat-box'><strong>"+approved+"</strong><span class='small'>Đã duyệt</span></div><div class='stat-box'><strong>"+pending+"</strong><span class='small'>Chờ duyệt</span></div><div class='stat-box'><strong>"+rejected+"</strong><span class='small'>Bị từ chối</span></div></div><h3>Build của tôi</h3>"+(own.length?own.map(b=>"<article class='card'><strong>"+esc(b.weapon||"Build")+"</strong><p>"+esc(b.mode||"")+"</p><p class='small'>Trạng thái: "+esc(b.status||"Chưa xác định")+"</p><div class='code'>"+esc(b.code||"")+"</div></article>").join(""):"<p class='small'>Bạn chưa đăng Build nào.</p>");
+}
 function toggleAdmin(){if(!isAdmin)return alert("Tài khoản không có quyền Admin.");$("adminpanel").style.display=$("adminpanel").style.display==="block"?"none":"block";if($("adminpanel").style.display==="block")renderAdmin();}
 async function checkAdmin(){isAdmin=false;if(user&&db){let {data,error}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();if(error)console.error("Không kiểm tra được quyền Admin:",error.message);isAdmin=!!data;}authUI();}
 async function signUp(){if(!db)return alert("Chưa cấu hình Supabase.");let email=$("email").value.trim(),password=$("password").value;if(!email||password.length<6)return alert("Nhập email hợp lệ và mật khẩu ít nhất 6 ký tự.");let {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin}});$("authmessage").textContent=error?error.message:"Đăng ký thành công. Kiểm tra email để xác nhận nếu được yêu cầu.";}
