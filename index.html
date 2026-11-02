@@ -42,7 +42,7 @@ footer{text-align:center;padding:24px;color:#777}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // Chỉ thay hai giá trị dưới đây bằng Project URL và Publishable key. Không dùng Secret key.
-const SUPABASE_URL="shttps://wpsjvaliswsogfuosffn.supabase.co";
+const SUPABASE_URL="https://wpsjvaliswsogfuosffn.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_FoHvAZD4EGoBhXayAHm7iQ_W2U48Qjn";
 const ready=SUPABASE_URL.startsWith("https://")&&SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_")&&window.supabase;
 const db=ready?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
