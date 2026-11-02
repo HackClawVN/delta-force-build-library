@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HackClawVN - Delta Force Build Library</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0e12;color:#eee;font-family:Arial,sans-serif}
+header{padding:18px;background:#151b22;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:20px;font-weight:bold;color:#d6a64b}
+button{border:0;border-radius:7px;padding:11px 15px;cursor:pointer;font-weight:bold}
+.gold{background:#d6a64b;color:#111}
+.dark{background:#28313a;color:white}
+main{max-width:1050px;margin:auto;padding:22px}
+.hero{padding:35px 20px;background:linear-gradient(120deg,#29333b,#11171d);border-radius:12px}
+h1{font-size:32px;margin:8px 0;color:#d6a64b}
+p{color:#aab4bd}
+input,select,textarea{background:#171e25;color:white;border:1px solid #39434d;padding:12px;border-radius:7px;width:100%;margin:5px 0}
+.toolbar{display:flex;gap:8px;margin:20px 0}
+.toolbar input{flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
+.card{background:#171e25;border:1px solid #303b45;border-radius:10px;padding:15px}
+.card h3{color:#d6a64b}
+.code{background:#090d11;padding:12px;overflow-wrap:anywhere;border:1px dashed #555;border-radius:6px}
+.actions{display:flex;gap:8px;margin-top:12px}
+.actions button{flex:1}
+footer{text-align:center;padding:25px;color:#777}
+#form{display:none;background:#171e25;padding:18px;border-radius:10px;margin:20px 0}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">HACKCLAWVN</div>
+ <button class="dark" onclick="language()" id="lang">🇬🇧 English</button>
+</header>
+<main>
+<section class="hero">
+ <div id="subtitle">DELTA FORCE COMMUNITY</div>
+ <h1 id="title">THƯ VIỆN BUILD SÚNG</h1>
+ <p id="intro">Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.</p>
+ <button class="gold" onclick="showForm()" id="post">+ ĐĂNG BUILD</button>
+</section>
+
+<section id="form">
+ <h2 id="formtitle">Đóng góp Build mới</h2>
+ <input id="gun" placeholder="Tên súng">
+ <select id="mode">
+  <option>Chiến Dịch</option>
+  <option>Chiến Trường</option>
+ </select>
+ <input id="buildcode" placeholder="Mã Build súng">
+ <input id="image" type="file" accept="image/*">
+ <textarea id="desc" placeholder="Mô tả và phụ kiện"></textarea>
+ <button class="gold" onclick="addBuild()" id="submit">Đăng bài</button>
+ <button class="dark" onclick="hideForm()">Đóng</button>
+</section>
+
+<h2 id="library">BUILD MỚI NHẤT</h2>
+<div class="toolbar">
+ <input id="search" placeholder="Tìm kiếm súng..." oninput="render()">
+ <select id="filter" onchange="render()">
+  <option value="">Tất cả chế độ</option>
+  <option>Chiến Dịch</option>
+  <option>Chiến Trường</option>
+ </select>
+</div>
+<div class="grid" id="builds"></div>
+</main>
+<footer>HACKCLAWVN © 2026 | DELTA FORCE BUILD COMMUNITY</footer>
+
+<script>
+let english=false;
+let data=JSON.parse(localStorage.getItem("dfbuilds")||"null")||[
+{gun:"AKM",mode:"Chiến Trường",code:"AKM-DEMO-001",desc:"Build mẫu cân bằng, phù hợp giao tranh tầm trung.",likes:12},
+{gun:"M4A1",mode:"Chiến Dịch",code:"M4A1-DEMO-002",desc:"Build mẫu ổn định và dễ sử dụng.",likes:8},
+{gun:"MP5",mode:"Chiến Trường",code:"MP5-DEMO-003",desc:"Build mẫu cơ động, dành cho cự ly gần.",likes:5}
+];
+function language(){
+ english=!english;
+ document.documentElement.lang=english?"en":"vi";
+ document.getElementById("lang").innerText=english?"🇻🇳 Tiếng Việt":"🇬🇧 English";
+ document.getElementById("subtitle").innerText=english?"DELTA FORCE COMMUNITY":"DELTA FORCE COMMUNITY";
+ document.getElementById("title").innerText=english?"WEAPON BUILD LIBRARY":"THƯ VIỆN BUILD SÚNG";
+ document.getElementById("intro").innerText=english?"Discover and share the best weapon builds from the Delta Force community.":"Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.";
+ document.getElementById("post").innerText=english?"+ SUBMIT BUILD":"+ ĐĂNG BUILD";
+ document.getElementById("formtitle").innerText=english?"Submit a new build":"Đóng góp Build mới";
+ document.getElementById("submit").innerText=english?"Submit":"Đăng bài";
+ document.getElementById("library").innerText=english?"LATEST BUILDS":"BUILD MỚI NHẤT";
+ render();
+}
+function showForm(){document.getElementById("form").style.display="block"}
+function hideForm(){document.getElementById("form").style.display="none"}
+function addBuild(){
+ let gun=document.getElementById("gun").value.trim();
+ let code=document.getElementById("buildcode").value.trim();
+ let desc=document.getElementById("desc").value.trim();
+ if(!gun||!code){alert("Vui lòng nhập tên súng và mã Build");return}
+ let file=document.getElementById("image").files[0];
+ if(file){
+  let reader=new FileReader();
+  reader.onload=()=>saveBuild(gun,code,desc,reader.result);
+  reader.readAsDataURL(file);
+ }else saveBuild(gun,code,desc,"");
+}
+function saveBuild(gun,code,desc,photo){
+ data.unshift({gun,code,desc,photo,mode:document.getElementById("mode").value,likes:0});
+ localStorage.setItem("dfbuilds",JSON.stringify(data));
+ ["gun","buildcode","desc","image"].forEach(id=>document.getElementById(id).value="");
+ hideForm();render();alert("Đã thêm Build!");
+}
+function like(i){data[i].likes++;localStorage.setItem("dfbuilds",JSON.stringify(data));render()}
+function copyCode(code){
+ if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>alert("Đã sao chép!")).catch(()=>prompt("Sao chép mã:",code));
+ else prompt("Sao chép mã:",code);
+}
+function render(){
+ let q=document.getElementById("search").value.toLowerCase();
+ let f=document.getElementById("filter").value;
+ let list=data.map((b,i)=>({...b,index:i})).filter(b=>
+ (!f||b.mode===f)&&
+ (b.gun+b.code+b.desc).toLowerCase().includes(q));
+ document.getElementById("builds").innerHTML=list.map(b=>`
+ <article class="card">
+ ${b.photo?`<img src="${b.photo}" style="width:100%;border-radius:7px">`:""}
+ <h3>${escapeHTML(b.gun)}</h3>
+ <p>${escapeHTML(b.mode)}</p>
+ <p>${escapeHTML(b.desc||"")}</p>
+ <div class="code">${escapeHTML(b.code)}</div>
+ <div class="actions">
+ <button class="gold" onclick="copyCode(${JSON.stringify(b.code)})">${english?"Copy code":"Sao chép mã"}</button>
+ <button class="dark" onclick="like(${b.index})">♥ ${b.likes}</button>
+ </div></article>`).join("")||"<p>Không tìm thấy Build.</p>";
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+render();
+</script>
+</body>
+  </html>
+  
