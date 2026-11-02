@@ -13,7 +13,7 @@ input,select,textarea{background:#171e25;color:white;border:1px solid #39434d;pa
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
 .toolbar{display:flex;gap:8px}.toolbar input{flex:1}.code{background:#090d11;padding:12px;overflow-wrap:anywhere}
 .card img{width:100%;max-height:220px;object-fit:cover;border-radius:7px}.small,p{color:#aab4bd;line-height:1.5}
-.actions{display:flex;gap:8px}.actions button{flex:1}#form,#authbox,#adminpanel{display:none}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.pending-tag{color:#f0c36a;font-weight:bold}
+.actions{display:flex;gap:8px}.actions button{flex:1}#form,#authbox,#adminpanel{display:none}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.pending-tag{color:#f0c36a;font-weight:bold}.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;padding:18px;overflow:auto}.detail-modal{max-width:760px;margin:30px auto;background:#171e25;border:1px solid #46515c;border-radius:12px;padding:18px;position:relative}.detail-modal img{width:100%;max-height:420px;object-fit:contain;background:#090d11;border-radius:8px}.detail-code{font-size:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;background:#090d11;padding:14px;border-radius:8px}.detail-close{float:right}.detail-meta{color:#d6a64b;font-weight:bold}
 footer{text-align:center;padding:24px;color:#777}
 @media(max-width:560px){.toolbar{display:block}.actions{flex-direction:column}}
 </style></head><body>
@@ -40,6 +40,9 @@ footer{text-align:center;padding:24px;color:#777}
 <h2 id="library">BUILD MỚI NHẤT</h2><div class="toolbar"><input id="search" placeholder="Tìm kiếm súng..." oninput="render()">
 <select id="filter" onchange="render()"><option value="">Tất cả chế độ</option><option>Chiến Dịch</option><option>Chiến Trường</option></select></div>
 <div id="notice" class="small">Đang kết nối thư viện...</div><div class="grid" id="builds"></div></main>
+<div id="detailmodal" class="modal-backdrop" onclick="if(event.target===this)closeBuildDetail()">
+<div class="detail-modal"><button class="dark detail-close" onclick="closeBuildDetail()">Đóng ✕</button><div id="detailcontent"></div></div>
+</div>
 <footer>HACKCLAWVN © 2026 | DELTA FORCE BUILD COMMUNITY</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -67,7 +70,29 @@ async function setBuildStatus(id,status){if(!isAdmin)return alert("Bạn không 
 async function addBuild(){if(!user)return alert("Bạn cần đăng nhập trước.");let weapon=$("gun").value.trim(),code=$("buildcode").value.trim(),description=$("desc").value.trim(),mode=$("mode").value,file=$("image").files[0];if(!weapon||!code)return alert("Nhập tên súng và mã Build.");if(file&&(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024))return alert("Ảnh phải JPG, PNG hoặc WEBP và không quá 5 MB.");let btn=$("submitbutton");btn.disabled=true;try{let image_url=null;if(file){let ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg",path=user.id+"/"+crypto.randomUUID()+"."+ext;let {error}=await db.storage.from("build-images").upload(path,file,{contentType:file.type});if(error)throw error;image_url=db.storage.from("build-images").getPublicUrl(path).data.publicUrl;}let {error}=await db.from("builds").insert({user_id:user.id,weapon,mode,title:weapon+" - "+mode,code,description,image_url,accessories:[],status:"pending"});if(error)throw error;alert("Đã gửi Build! Bài đang chờ duyệt.");["gun","buildcode","desc","image"].forEach(id=>$(id).value="");hideForm();await loadBuilds();}catch(e){alert("Không gửi được: "+e.message);}finally{btn.disabled=false;}}
 async function likeBuild(id){if(!user){alert("Đăng nhập để yêu thích Build.");toggleAuth();return;}let {data:old,error:e}=await db.from("likes").select("id").eq("build_id",id).eq("user_id",user.id).maybeSingle();if(e)return alert(e.message);let result=old?await db.from("likes").delete().eq("id",old.id):await db.from("likes").insert({build_id:id,user_id:user.id});if(result.error)alert(result.error.message);await render();}
 async function commentBuild(id){if(!user){alert("Đăng nhập để bình luận.");toggleAuth();return;}let input=$("comment-"+id),content=input.value.trim();if(!content)return;let {error}=await db.from("comments").insert({build_id:id,user_id:user.id,content});if(error)return alert(error.message);input.value="";await render();}
-async function render(){if(!db)return;let q=$("search").value.toLowerCase(),f=$("filter").value,list=builds.filter(b=>b.status==="approved"&&(!f||b.mode===f)&&((b.weapon||"")+(b.code||"")+(b.description||"")).toLowerCase().includes(q));if(!list.length){$("builds").innerHTML="<p>Chưa có Build phù hợp. Hãy quay lại sau nhé!</p>";return;}let cards=await Promise.all(list.map(async b=>{let [{data:likes},{data:comments}]=await Promise.all([db.from("likes").select("id,user_id").eq("build_id",b.id),db.from("comments").select("id,content").eq("build_id",b.id).order("created_at").limit(10)]);let liked=!!(user&&(likes||[]).some(x=>x.user_id===user.id));return `<article class="card">${b.image_url?`<img src="${esc(b.image_url)}" alt="Ảnh build" loading="lazy">`:""}<h3>${esc(b.weapon)}</h3><p>${esc(b.mode)}</p><p>${esc(b.description||"")}</p><div class="code">${esc(b.code)}</div><div class="actions"><button class="gold" onclick="copyCode('${String(b.code||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'")}')">Sao chép mã</button><button class="dark" onclick="likeBuild('${b.id}')">${liked?"♥":"♡"} ${(likes||[]).length}</button></div><div><strong>Bình luận</strong>${(comments||[]).map(c=>`<p class="small">${esc(c.content)}</p>`).join("")||'<p class="small">Chưa có bình luận.</p>'}<input id="comment-${b.id}" maxlength="500" placeholder="Viết bình luận..."><button class="dark" onclick="commentBuild('${b.id}')">Gửi</button></div></article>`;}));$("builds").innerHTML=cards.join("");}
+async function render(){if(!db)return;let q=$("search").value.toLowerCase(),f=$("filter").value,list=builds.filter(b=>b.status==="approved"&&(!f||b.mode===f)&&((b.weapon||"")+(b.code||"")+(b.description||"")).toLowerCase().includes(q));if(!list.length){$("builds").innerHTML="<p>Chưa có Build phù hợp. Hãy quay lại sau nhé!</p>";return;}let cards=await Promise.all(list.map(async b=>{let [{data:likes},{data:comments}]=await Promise.all([db.from("likes").select("id,user_id").eq("build_id",b.id),db.from("comments").select("id,content").eq("build_id",b.id).order("created_at").limit(10)]);let liked=!!(user&&(likes||[]).some(x=>x.user_id===user.id));return `<article class="card">${b.image_url?`<img src="${esc(b.image_url)}" alt="Ảnh build" loading="lazy">`:""}<h3>${esc(b.weapon)}</h3><p>${esc(b.mode)}</p><button class="dark" onclick="openBuildDetail('${b.id}')">Xem chi tiết</button><p>${esc(b.description||"")}</p><div class="code">${esc(b.code)}</div><div class="actions"><button class="gold" onclick="copyCode('${String(b.code||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'")}')">Sao chép mã</button><button class="dark" onclick="likeBuild('${b.id}')">${liked?"♥":"♡"} ${(likes||[]).length}</button></div><div><strong>Bình luận</strong>${(comments||[]).map(c=>`<p class="small">${esc(c.content)}</p>`).join("")||'<p class="small">Chưa có bình luận.</p>'}<input id="comment-${b.id}" maxlength="500" placeholder="Viết bình luận..."><button class="dark" onclick="commentBuild('${b.id}')">Gửi</button></div></article>`;}));$("builds").innerHTML=cards.join("");}
+function openBuildDetail(id){
+ let b=builds.find(x=>x.id===id);if(!b)return;
+ let accessories=b.accessories;
+ let accessoryHtml="";
+ if(Array.isArray(accessories)&&accessories.length){
+   accessoryHtml="<h3>Phụ kiện</h3><ul>"+accessories.map(x=>"<li>"+esc(typeof x==="string"?x:(x.name||x.label||JSON.stringify(x)))+"</li>").join("")+"</ul>";
+ }else if(accessories&&typeof accessories==="object"&&Object.keys(accessories).length){
+   accessoryHtml="<h3>Phụ kiện</h3><ul>"+Object.entries(accessories).map(([k,v])=>"<li><strong>"+esc(k)+":</strong> "+esc(typeof v==="string"?v:JSON.stringify(v))+"</li>").join("")+"</ul>";
+ }else{
+   accessoryHtml="<p class='small'>Chưa có danh sách phụ kiện riêng. Xem mô tả để biết cấu hình.</p>";
+ }
+ $("detailcontent").innerHTML=
+   (b.image_url?"<img src='"+esc(b.image_url)+"' alt='Ảnh Build'>":"")+
+   "<p class='detail-meta'>"+esc(b.mode||"")+"</p>"+
+   "<h2>"+esc(b.title||b.weapon||"Chi tiết Build")+"</h2>"+
+   "<p>"+esc(b.description||"Chưa có mô tả.")+"</p>"+
+   accessoryHtml+
+   "<h3>Mã Build</h3><div class='detail-code'>"+esc(b.code||"")+"</div>"+
+   "<button class='gold' onclick='copyCode("+JSON.stringify(String(b.code||""))+")'>Sao chép mã Build</button>";
+ $("detailmodal").style.display="block";
+}
+function closeBuildDetail(){$("detailmodal").style.display="none";}
 function copyCode(code){if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>alert("Đã sao chép mã!")).catch(()=>prompt("Sao chép mã:",code));else prompt("Sao chép mã:",code);}
 function language(){english=!english;document.documentElement.lang=english?"en":"vi";$("lang").textContent=english?"🇻🇳 Tiếng Việt":"🇬🇧 English";$("title").textContent=english?"WEAPON BUILD LIBRARY":"THƯ VIỆN BUILD SÚNG";$("intro").textContent=english?"Discover and share the best weapon builds from the Delta Force community.":"Khám phá và chia sẻ những cấu hình súng tốt nhất từ cộng đồng Delta Force.";$("postbutton").textContent=english?"+ SUBMIT BUILD":"+ ĐĂNG BUILD";$("library").textContent=english?"LATEST BUILDS":"BUILD MỚI NHẤT";$("search").placeholder=english?"Search weapons...":"Tìm kiếm súng...";}
 if(db){db.auth.getSession().then(async({data})=>{user=data.session?.user||null;await checkAdmin();await loadBuilds();});db.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;await checkAdmin();await loadBuilds();});}else{authUI();msg("Chưa cấu hình Supabase. Hãy điền hai thông tin kết nối trong mã nguồn.",true);}
